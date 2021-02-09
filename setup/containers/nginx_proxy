@@ -1,8 +1,9 @@
-add-apt-repository ppa:certbot/certbot
 apt-get -y update
 apt-get -y upgrade
 apt-get -y install nginx libwww-perl
-apt-get -y install certbot
+snap install --classic certbot
+ln -s /snap/bin/certbot /usr/bin/certbot
+
 
 mkdir -p /etc/nginx/upstream
 
