@@ -15,4 +15,4 @@ lxc exec $NAME -- ufw allow 80/tcp
 lxc exec $NAME -- ufw allow 443/tcp
 
 #lxc exec $NAME -- certbot certonly -d $FQDN --standalone -m $EMAIL --agree-tos -n --no-eff-email
-lxc exec $NAME -- service nginx restart
+#lxc exec $NAME -- service nginx restart
