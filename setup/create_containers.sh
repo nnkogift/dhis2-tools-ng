@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+LXDBR=lxdbr0
+
+# ubuntu version for containers
+GUESTOS="20.04"
+
+# some introspection
+DEFAULT_INTERFACE=$(ip route |grep default | awk '{print $5}')
+LXDBRADDR=$(lxc network get lxdbr0 ipv4.address)
+
 UFW_STATUS=$(sudo ufw status |grep Status|cut -d ' ' -f 2)
 if [[ $UFW_STATUS == "inactive" ]]; then
 	echo
@@ -13,20 +22,14 @@ if [[ $UFW_STATUS == "inactive" ]]; then
 	exit 1
 fi
 
+# Make sure ufw is not blocking the lxd traffic
+ufw allow in on lxdbr0
+sudo ufw allow out on lxdbr0
+
+apt-get -y install unzip auditd jq
+
 # Parse json config file
 source parse_config.sh
-
-# Setup encrypted disk if specified
-# NOTE: this feature not implemented yet
-if [[ ! -z $ENCDEV ]] ; then
-  source ./disk_setup
-fi
-
-# ubuntu version for containers
-GUESTOS="20.04"
-
-# some introspection
-DEFAULT_INTERFACE=$(ip route |grep default | awk '{print $5}')
 
 # set any environment variables for default profile in all containers
 # example TZ (timezone)
@@ -44,7 +47,7 @@ for CONTAINER in $CONTAINERS; do
 
   echo "Creating $NAME of type $TYPE"
   lxc init ubuntu:$GUESTOS $NAME
-  lxc network attach lxdbr0 $NAME eth0 eth0
+  lxc network attach $LXDBR $NAME eth0 eth0
   lxc config device set $NAME eth0 ipv4.address $IP
 
   # create nat rules for proxy
@@ -68,7 +71,6 @@ for CONTAINER in $CONTAINERS; do
   done
 
   # run setup scripts
-  
   echo "Running setup from containers/$TYPE"
   cat containers/$TYPE | lxc exec $NAME -- bash
 
@@ -107,6 +109,4 @@ if [[ $MONITORING == munin ]]; then
 
   lxc exec monitor -- /etc/init.d/munin restart
 fi
-
-# TODO - encrypted volume stuff
 
